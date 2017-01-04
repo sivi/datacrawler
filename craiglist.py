@@ -34,28 +34,26 @@ def getParsedPage(pageUrl):
 #  ----------------
 #
 
-def insertIntoMap(aList, aMap):
-  for item in aList:
-    allLinks = item.find_all('a')
-    for aLink in allLinks:
-      key = aLink.get_text()
-      value = aLink.get('href')
-      if key in aMap:
-        continue
-      aMap[key] = value
+def insertIntoMap(item, aLinkMap, state, aStateMap):
+  allLinks = item.find_all('a')
+  for aLink in allLinks:
+    key = aLink.get_text()
+    value = aLink.get('href')
+    if key in aLinkMap:
+      print ('In map already ' + key + ' ' + aLinkMap[key] + ' ' + value)
+      continue
+    aLinkMap[key] = value
+    aStateMap[key] = state
 
 #
 #  ----------------
 #
 
-def extractCitiesCraiglistUrl(soup_obj, aMap):
-  aList = soup_obj.find_all('ul', class_='acitem')
-  insertIntoMap(aList, aMap)
+def extractCitiesCraiglistUrl(soup_obj, aLinkMap, aStateMap):
+  aList = soup_obj.find_all('h4')
+  for item in aList:
+    insertIntoMap(item.find_next_sibling(), aLinkMap, item.get_text(), aStateMap)
   
-
-  for aKey in aMap.keys():
-    print (aKey + ' --> ' + aMap[aKey])
-
 #
 #  ----------------
 #
@@ -76,7 +74,17 @@ def craiglist(country, state=None, city=None, filters=None):
 
 #craiglist(country='US', state='CA', city='San Francisco', filters=None)
 
-aMap = {}
-soup_obj = getParsedPage(pageUrl='http://sfbay.craigslist.org')
-extractCitiesCraiglistUrl(soup_obj, aMap)
+aLinkMap = {}
+aStateMap = {}
+
+soup_obj = getParsedPage(pageUrl='https://www.craigslist.org/about/sites')
+extractCitiesCraiglistUrl(soup_obj, aLinkMap, aStateMap)
+
+
+for aKey in aLinkMap.keys():
+  print (aKey + ' --> ' + aLinkMap[aKey])
+
+for aKey in aStateMap.keys():
+  print (aKey + ' --> ' + aStateMap[aKey])
+
 
