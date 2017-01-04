@@ -34,12 +34,27 @@ def getParsedPage(pageUrl):
 #  ----------------
 #
 
-def extractCitiesCraiglistUrl(soup_obj):
-  aList = soup_obj.find_all('ul', class_='acitem')
+def insertIntoMap(aList, aMap):
   for item in aList:
     allLinks = item.find_all('a')
     for aLink in allLinks:
-      print (aLink.get('href') + ' --> ' + aLink.get_text())
+      key = aLink.get_text()
+      value = aLink.get('href')
+      if key in aMap:
+        continue
+      aMap[key] = value
+
+#
+#  ----------------
+#
+
+def extractCitiesCraiglistUrl(soup_obj, aMap):
+  aList = soup_obj.find_all('ul', class_='acitem')
+  insertIntoMap(aList, aMap)
+  
+
+  for aKey in aMap.keys():
+    print (aKey + ' --> ' + aMap[aKey])
 
 #
 #  ----------------
@@ -60,6 +75,8 @@ def craiglist(country, state=None, city=None, filters=None):
 #
 
 #craiglist(country='US', state='CA', city='San Francisco', filters=None)
+
+aMap = {}
 soup_obj = getParsedPage(pageUrl='http://sfbay.craigslist.org')
-extractCitiesCraiglistUrl(soup_obj)
+extractCitiesCraiglistUrl(soup_obj, aMap)
 
