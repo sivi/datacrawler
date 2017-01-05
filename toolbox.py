@@ -8,12 +8,14 @@ class ToolBox:
   #
   #  ----------------
   #
-  def __init__(self):
+  #def __init__(self):
     #print 'Hello from toolbox'
+    
   #
   #  ----------------
   #
   def getParsedPage(self, pageUrl):
+    
       try:
           response = urllib2.urlopen(pageUrl) # Connect to the job posting
           site = response.read() # Read the job posting
