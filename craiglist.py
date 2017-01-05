@@ -25,7 +25,23 @@ class CraigList:
   #
   #  ----------------
   #
-  def insertIntoMap(self, item, state):
+  def extractCitiesCraiglistUrl(self, soup_obj):
+    aList = soup_obj.find_all('h4')
+    for item in aList:
+      self.insertCityIntoMap(item.find_next_sibling(), item.get_text())
+    
+  #
+  #  ----------------
+  #
+  def extractJobsCraiglistUrl(self, soup_obj):
+    aList = soup_obj.find_all(id='jjj')
+    for item in aList:
+      self.insertJobUrlIntoMap(item)
+
+  #
+  #  ----------------
+  #
+  def insertCityIntoMap(self, item, state):
     allLinks = item.find_all('a')
     for aLink in allLinks:
       key = aLink.get_text()
@@ -50,36 +66,14 @@ class CraigList:
       self.aJobCategoryMap[key] = value
   
   #
-  #  ----------------
+  #  ---------------- END of static data bootstrap  ----------------
   #
-  def extractCitiesCraiglistUrl(self, soup_obj):
-    aList = soup_obj.find_all('h4')
-    for item in aList:
-      self.insertIntoMap(item.find_next_sibling(), item.get_text())
     
-  #
-  #  ----------------
-  #
-  def extractJobsCraiglistUrl(self, soup_obj):
-    aList = soup_obj.find_all(id='jjj')
-    for item in aList:
-      self.insertJobUrlIntoMap(item)
-    
-  #
-  #  ----------------
-  #
-  def parseJobUrl(self, baseUrl, jobUrl):
-     url = jobUrl.get('href')
-     jobTitle = jobUrl.get_text()
-     
-     parsedMap = {}
-     parsedMap['url'] = baseUrl + url
-     parsedMap['jobTitle'] = jobTitle
-     self.aJobList.append(parsedMap)
   #
   #  ----------------
   #
   def fetchJobList(self, city, jobCategory, countLimit=10):
+    
     baseUrl = self.aLinkMap[city]
     assert( baseUrl != None)
     jobUrl = self.aJobCategoryMap[jobCategory]
@@ -95,17 +89,65 @@ class CraigList:
     toolBox = ToolBox()
     soup_obj = toolBox.getParsedPage(baseUrl + jobUrl)
     jobList = soup_obj.find_all(class_="result-row")
-    
+    self.parseJobList(jobList, baseUrl, city, jobCategory, countLimit)
+
+  #
+  #  ----------------
+  #
+  def parseJobList(self, jobList, baseUrl, city, jobCategory, countLimit=10):
     loopCount = 0
     for jobItem in jobList:
       if loopCount == countLimit:
         break
       jobUrl = jobItem.find(class_="result-title hdrlnk")
-      self.parseJobUrl(baseUrl, jobUrl)
+      neighbourhoodItem = jobItem.find(class_="result-hood")
+      if neighbourhoodItem == None:
+        neighbourhood = ''
+      else:
+        neighbourhood = neighbourhoodItem.get_text()
+      
+      self.parseJobUrl(baseUrl, jobUrl, city, neighbourhood, jobCategory)
       loopCount +=1
 
   #
   #  ----------------
+  #
+  def parseJobUrl(self, baseUrl, jobUrl, city, neighbourhood, jobCategory):
+     url = jobUrl.get('href')
+     jobTitle = jobUrl.get_text()
+     
+     parsedMap = {}
+     parsedMap['url'] = baseUrl + url
+     parsedMap['jobTitle'] = jobTitle
+     parsedMap['city'] = city
+     parsedMap['neighbourhood'] = neighbourhood 
+     parsedMap['jobCategory'] = jobCategory
+     self.parseJobPage(parsedMap)
+     
+     self.aJobList.append(parsedMap)
+
+  #
+  #  ----------------
+  #
+  def parseJobPage(self, parsedMap):
+    url = parsedMap['url']
+    toolBox = ToolBox()
+    soup_obj = toolBox.getParsedPage(url)
+    jobAttributes = soup_obj.find(class_='mapAndAttrs')
+    if not jobAttributes == None:
+      attributeList = jobAttributes.find_all('span')
+      if not attributeList == None and len(attributeList) > 0 :
+        compensationEntry = attributeList[0].get_text()
+        compensationList = compensationEntry.split(':', 1)
+        parsedMap['compensation'] = compensationList[1] 
+        if len(attributeList) > 1 :
+          jobTypeEntry = attributeList[1].get_text()
+          jobTypeList = jobTypeEntry.split(':', 1)
+          parsedMap['jobType'] = jobTypeList[1] 
+          
+    
+  #
+  #  ----------------  DUMP of the collected data  ------------------
   #
   def dumpCityUrlMap(self):
     for aKey in self.aLinkMap.keys():
@@ -156,8 +198,11 @@ class CraigList:
   #
   #  ----------------
   #
+#
+#  ------------------------  END of CraigList class  ---------------
+#
 
-  #craiglist(country='US', state='CA', city='San Francisco', filters=None)
+#craiglist(country='US', state='CA', city='San Francisco', filters=None)
 test = CraigList()
 #test.dumpCityUrlMap()  
 #test.dumpJobCategoryUrlMap()  
