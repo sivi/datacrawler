@@ -7,5 +7,7 @@ test = CraigList()
 #test.dumpJobFilterMap()
 
 #print ('link map lenght ' + str(len(test.aLinkMap)))
-test.fetchJobList(city='san francisco bay area', jobCategory='jobs', filterList=['full-time','contract'], countLimit=5)
-test.dumpJobList()
+success = test.fetchJobList(city='san francisco bay area', jobCategory='jobs', filterList=['full-time','contract'], countLimit=5)
+#success = test.fetchJobList(city='chicago', jobCategory='business / mgmt', filterList=['full-time','posted today'], countLimit=10)
+if success:
+  test.dumpJobList()

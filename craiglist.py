@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup # For HTML parsing
 from toolbox import ToolBox 
 import re # Regular expressions
+import logging
 
 
 class CraigList:
@@ -142,10 +143,19 @@ class CraigList:
       filters = '?' + filters[1:]
       aUrl = aUrl + filters
     toolBox = ToolBox()
-    soup_obj = toolBox.getParsedPage(aUrl)
-    jobList = soup_obj.find_all(class_="result-row")
-    self.parseJobList(jobList, baseUrl, city, jobCategory, countLimit)
-
+    
+    try:
+      soup_obj = toolBox.getParsedPage(aUrl)
+      jobList = soup_obj.find_all(class_="result-row")
+      self.parseJobList(jobList, baseUrl, city, jobCategory, countLimit)
+      return True
+    except Exception, e:
+      logging.error(' fetchJobList FAILED ' + str(e)+ '  ' + aUrl)
+      import traceback
+      logging.error(traceback.format_exc())
+      
+      return False
+      
   #
   #  ----------------
   #
@@ -155,6 +165,11 @@ class CraigList:
       if loopCount == countLimit:
         break
       jobUrl = jobItem.find(class_="result-title hdrlnk")
+      # skip references to neighbouring areas which are different cities / servers
+      if jobUrl is None or \
+         jobUrl.get('href').startswith('//'): 
+        continue
+      # neighbourhood within city domain
       neighbourhoodItem = jobItem.find(class_="result-hood")
       if neighbourhoodItem == None:
         neighbourhood = ''
@@ -177,9 +192,9 @@ class CraigList:
      parsedMap['city'] = city
      parsedMap['neighbourhood'] = neighbourhood 
      parsedMap['jobCategory'] = jobCategory
-     self.parseJobPage(parsedMap)
-     
-     self.aJobList.append(parsedMap)
+     pageSucceeded = self.parseJobPage(parsedMap)
+     if pageSucceeded:
+       self.aJobList.append(parsedMap)
 
   #
   #  ----------------
@@ -187,7 +202,10 @@ class CraigList:
   def parseJobPage(self, parsedMap):
     url = parsedMap['url']
     toolBox = ToolBox()
-    soup_obj = toolBox.getParsedPage(url)
+    try:
+      soup_obj = toolBox.getParsedPage(url)
+    except:
+      return False
     postDateEntry = soup_obj.find('p', id='display-date')
     parsedMap['postingDate'] = postDateEntry.find('time').get('datetime')
     jobAttributes = soup_obj.find(class_='mapAndAttrs')
@@ -201,7 +219,7 @@ class CraigList:
           jobTypeEntry = attributeList[1].get_text()
           jobTypeList = jobTypeEntry.split(':', 1)
           parsedMap['jobType'] = jobTypeList[1] 
-          
+    return True          
     
   #
   #  ----------------  DUMP of the collected data  ------------------
