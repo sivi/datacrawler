@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup # For HTML parsing
 import urllib2 # Website connections
 import re # Regular expressions
 import logging
+import time
 
 class ToolBox:
 
@@ -14,9 +15,11 @@ class ToolBox:
   #
   #  ----------------
   #
-  def getParsedPage(self, pageUrl):
+  def getParsedPage(self, pageUrl, delayBetweenRequests=0):
     
       try:
+          time.sleep(delayBetweenRequests * 0.001)
+          logging.warning(pageUrl)
           response = urllib2.urlopen(pageUrl) # Connect to the job posting
           site = response.read() # Read the job posting
       except urllib2.HTTPError, e:

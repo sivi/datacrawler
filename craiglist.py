@@ -11,13 +11,18 @@ class CraigList:
   aJobCategoryMap = {} # map of job category/job url entry: category --> url entry
   aJobFilterMap = {} # map of job filter / job filter url: filter --> url entry
   aJobList = [] # resulting list of job maps
-
+  delayBetweenRequests = 0 #delay between subsequent calls in miliseconds
+  totalcount = 0 # total count of available records (parsed from page)
+  retrievedRecords = 0 # internal progress counter
+  logger = logging.getLogger()
+  
   #
   #  ----------------
   #
-  def __init__(self):
+  def __init__(self, delayBetweenRequests = 0, loggingLevel = logging.WARNING):
     if len(self.aLinkMap) != 0:
       return
+    self.logger.setLevel(loggingLevel)
     toolBox = ToolBox()
     soup_obj = toolBox.getParsedPage('https://www.craigslist.org/about/sites')
     self.extractCitiesCraiglistUrl(soup_obj)
@@ -124,6 +129,9 @@ class CraigList:
   #
   def fetchJobList(self, city, jobCategory, filterList=None, countLimit=10):
     
+    totalcount = 0 # reset counter od available records
+    retrievedRecords = 0
+    nextBatchUrl = '' # url to retrieve next batch jobs page 
     baseUrl = self.aLinkMap[city]
     assert( baseUrl != None)
     jobUrl = self.aJobCategoryMap[jobCategory]
@@ -143,16 +151,24 @@ class CraigList:
       filters = '?' + filters[1:]
       aUrl = aUrl + filters
     toolBox = ToolBox()
-    
     try:
-      soup_obj = toolBox.getParsedPage(aUrl)
-      jobList = soup_obj.find_all(class_="result-row")
-      self.parseJobList(jobList, baseUrl, city, jobCategory, countLimit)
+      while True:
+        self.logger.info('retrieving ' + aUrl)
+        soup_obj = toolBox.getParsedPage(aUrl)
+        jobList = soup_obj.find_all(class_="result-row")
+        self.parseJobList(jobList, baseUrl, city, jobCategory, countLimit)
+
+        # check if next batch available
+        nextBatchUrl = soup_obj.find('link', rel='next') 
+        if self.retrievedRecords == countLimit or \
+           nextBatchUrl is None:
+          break
+        aUrl = nextBatchUrl.get('href')
       return True
     except Exception, e:
-      logging.error(' fetchJobList FAILED ' + str(e)+ '  ' + aUrl)
+      self.logger.error(' fetchJobList FAILED ' + str(e)+ '  ' + aUrl)
       import traceback
-      logging.error(traceback.format_exc())
+      self.logger.error(traceback.format_exc())
       
       return False
       
@@ -162,7 +178,7 @@ class CraigList:
   def parseJobList(self, jobList, baseUrl, city, jobCategory, countLimit=10):
     loopCount = 0
     for jobItem in jobList:
-      if loopCount == countLimit:
+      if self.retrievedRecords == countLimit:
         break
       jobUrl = jobItem.find(class_="result-title hdrlnk")
       # skip references to neighbouring areas which are different cities / servers
@@ -177,7 +193,7 @@ class CraigList:
         neighbourhood = neighbourhoodItem.get_text()
       
       self.parseJobUrl(baseUrl, jobUrl, city, neighbourhood, jobCategory)
-      loopCount +=1
+      self.retrievedRecords +=1
 
   #
   #  ----------------
@@ -203,7 +219,7 @@ class CraigList:
     url = parsedMap['url']
     toolBox = ToolBox()
     try:
-      soup_obj = toolBox.getParsedPage(url)
+      soup_obj = toolBox.getParsedPage(url, self.delayBetweenRequests)
     except:
       return False
     postDateEntry = soup_obj.find('p', id='display-date')
