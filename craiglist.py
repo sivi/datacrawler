@@ -19,7 +19,7 @@ class CraigList:
   #
   #  ----------------
   #
-  def __init__(self, delayBetweenRequests = 0, loggingLevel = logging.WARNING):
+  def __init__(self, delayBetweenRequests = 1, loggingLevel = logging.WARNING):
     if len(self.aLinkMap) != 0:
       return
     self.logger.setLevel(loggingLevel)
