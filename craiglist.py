@@ -131,7 +131,7 @@ class CraigList:
   #
   def fetchJobList(self, city, jobCategory, filterList=None, countLimit=10):
     
-    totalcount = 0 # reset counter od available records
+    self.totalcount = 0 # reset counter od available records
     retrievedRecords = 0
     nextBatchUrl = '' # url to retrieve next batch jobs page 
     baseUrl = self.aLinkMap[city]
@@ -158,6 +158,9 @@ class CraigList:
         self.logger.info('retrieving ' + aUrl)
         soup_obj = toolBox.getParsedPage(aUrl, self.delayBetweenRequests)
         jobList = soup_obj.find_all(class_="result-row")
+        totalcount = soup_obj.find('span', class_='totalcount')
+        if not totalcount is None:
+           self.totalcount = totalcount.get_text()
         self.parseJobList(jobList, baseUrl, city, jobCategory, countLimit)
 
         # check if next batch available
