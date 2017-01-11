@@ -23,6 +23,7 @@ class CraigList:
     if len(self.aLinkMap) != 0:
       return
     self.logger.setLevel(loggingLevel)
+    self.delayBetweenRequests = delayBetweenRequests
     toolBox = ToolBox()
     soup_obj = toolBox.getParsedPage('https://www.craigslist.org/about/sites')
     self.extractCitiesCraiglistUrl(soup_obj)
@@ -30,6 +31,7 @@ class CraigList:
     self.extractJobsCraiglistUrl(soup_obj)
     soup_obj = toolBox.getParsedPage('https://sfbay.craigslist.org/search/eng')
     self.extractRefineFiltersCraiglistUrl(soup_obj)
+    
     
   #
   #  ----------------
@@ -154,7 +156,7 @@ class CraigList:
     try:
       while True:
         self.logger.info('retrieving ' + aUrl)
-        soup_obj = toolBox.getParsedPage(aUrl)
+        soup_obj = toolBox.getParsedPage(aUrl, self.delayBetweenRequests)
         jobList = soup_obj.find_all(class_="result-row")
         self.parseJobList(jobList, baseUrl, city, jobCategory, countLimit)
 
@@ -208,14 +210,14 @@ class CraigList:
      parsedMap['city'] = city
      parsedMap['neighbourhood'] = neighbourhood 
      parsedMap['jobCategory'] = jobCategory
-     pageSucceeded = self.parseJobPage(parsedMap)
+     pageSucceeded = self.parseJobDetailsPage(parsedMap)
      if pageSucceeded:
        self.aJobList.append(parsedMap)
 
   #
   #  ----------------
   #
-  def parseJobPage(self, parsedMap):
+  def parseJobDetailsPage(self, parsedMap):
     url = parsedMap['url']
     toolBox = ToolBox()
     try:
@@ -224,6 +226,7 @@ class CraigList:
       return False
     postDateEntry = soup_obj.find('p', id='display-date')
     parsedMap['postingDate'] = postDateEntry.find('time').get('datetime')
+    parsedMap['jobPostingBody'] = soup_obj.find('section', id='postingbody').get_text()
     jobAttributes = soup_obj.find(class_='mapAndAttrs')
     if not jobAttributes == None:
       attributeList = jobAttributes.find_all('span')

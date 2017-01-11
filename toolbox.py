@@ -15,11 +15,11 @@ class ToolBox:
   #
   #  ----------------
   #
-  def getParsedPage(self, pageUrl, delayBetweenRequests=0):
+  def getParsedPage(self, pageUrl, delayBetweenRequests=1):
     
       try:
-          time.sleep(delayBetweenRequests * 0.001)
-          logging.warning(pageUrl)
+          time.sleep(delayBetweenRequests * 1.0)
+          logging.info(pageUrl)
           response = urllib2.urlopen(pageUrl) # Connect to the job posting
           site = response.read() # Read the job posting
       except urllib2.HTTPError, e:
