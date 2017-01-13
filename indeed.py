@@ -152,7 +152,7 @@ class Indeed:
   #
   def parseJobDetailsPage(self, parsedMap, parsedUrl):
     if parsedUrl.startswith('/rc/clk?'):
-      return True
+      return False
       
     url = parsedMap['url']
     toolBox = ToolBox()
