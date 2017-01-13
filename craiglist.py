@@ -229,7 +229,11 @@ class CraigList:
       return False
     postDateEntry = soup_obj.find('p', id='display-date')
     parsedMap['postingDate'] = postDateEntry.find('time').get('datetime')
-    parsedMap['jobPostingBody'] = soup_obj.find('section', id='postingbody').get_text()
+    jobPostingBody = soup_obj.find('section', id='postingbody')
+    jobText = ''
+    for paragraph in jobPostingBody.strings: 
+      jobText += paragraph + '\n' 
+    parsedMap['jobPostingBody'] = jobText 
     jobAttributes = soup_obj.find(class_='mapAndAttrs')
     if not jobAttributes == None:
       attributeList = jobAttributes.find_all('span')
