@@ -18,6 +18,9 @@ import logging
 #  print len(test.aJobList)
 #  print test.totalcount
 
+#
+# ---------------  Indeed.com
+#
 test = Indeed(delayBetweenRequests=2, loggingLevel=logging.INFO)
 #test.dumpJobTypeMap()  
 #test.dumpJobExperienceLevelMap()

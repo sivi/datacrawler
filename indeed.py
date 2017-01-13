@@ -143,37 +143,29 @@ class Indeed:
      parsedMap['jobTitle'] = jobTitle
      parsedMap['city'] = city
      parsedMap['jobCategory'] = jobCategory
-     pageSucceeded = self.parseJobDetailsPage(parsedMap)
+     pageSucceeded = self.parseJobDetailsPage(parsedMap, url)
      if pageSucceeded:
        self.aJobList.append(parsedMap)
 
   #
   #  ----------------
   #
-  def parseJobDetailsPage(self, parsedMap):
-    url = parsedMap['url']
-    if True:
+  def parseJobDetailsPage(self, parsedMap, parsedUrl):
+    if parsedUrl.startswith('/rc/clk?'):
       return True
       
+    url = parsedMap['url']
     toolBox = ToolBox()
     try:
       soup_obj = toolBox.getParsedPage(url, self.delayBetweenRequests)
     except:
       return False
-    postDateEntry = soup_obj.find('p', id='display-date')
-    parsedMap['postingDate'] = postDateEntry.find('time').get('datetime')
-    parsedMap['jobPostingBody'] = soup_obj.find('section', id='postingbody').get_text()
-    jobAttributes = soup_obj.find(class_='mapAndAttrs')
-    if not jobAttributes == None:
-      attributeList = jobAttributes.find_all('span')
-      if not attributeList == None and len(attributeList) > 0 :
-        compensationEntry = attributeList[0].get_text()
-        compensationList = compensationEntry.split(':', 1)
-        parsedMap['compensation'] = compensationList[1] 
-        if len(attributeList) > 1 :
-          jobTypeEntry = attributeList[1].get_text()
-          jobTypeList = jobTypeEntry.split(':', 1)
-          parsedMap['jobType'] = jobTypeList[1] 
+
+    jobText = ''
+    jobSummary = soup_obj.find('span', id='job_summary')
+    for paragraph in jobSummary.strings:
+      jobText += paragraph + '\n'
+    parsedMap['jobPostingBody'] = jobText
     return True          
     
   #
