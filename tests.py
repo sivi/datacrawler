@@ -18,7 +18,11 @@ import logging
 #  print len(test.aJobList)
 #  print test.totalcount
 
-test = Indeed(delayBetweenRequests=1, loggingLevel=logging.INFO)
-test.dumpJobCategoryUrlMap()  
-test.dumpStateUrlMap()  
+test = Indeed(delayBetweenRequests=2, loggingLevel=logging.INFO)
+#test.dumpJobTypeMap()  
+#test.dumpJobExperienceLevelMap()
+test.fetchJobList('Chicago,IL', radius=0, jobCategory='', daysBeforeToday=1, \
+  jobTypeList=['Commission'], jobExperienceLevelList=None, countLimit=11)
+test.dumpJobList()
+
 
