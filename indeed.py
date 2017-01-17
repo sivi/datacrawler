@@ -128,13 +128,13 @@ class Indeed:
       if jobLink is None:
         continue
       
-      self.parseJobUrl(baseUrl, jobLink, city, jobCategory)
+      self.parseJobUrl(baseUrl, jobLink, jobBlock, city, jobCategory)
       self.retrievedRecords +=1
 
   #
   #  ----------------
   #
-  def parseJobUrl(self, baseUrl, jobLink, city, jobCategory):
+  def parseJobUrl(self, baseUrl, jobLink, jobBlock, city, jobCategory):
      url = jobLink.get('href')
      jobTitle = jobLink.get('title')
      
@@ -143,9 +143,32 @@ class Indeed:
      parsedMap['jobTitle'] = jobTitle
      parsedMap['city'] = city
      parsedMap['jobCategory'] = jobCategory
+     self.parseOtherMetaData(jobBlock, parsedMap)
      pageSucceeded = self.parseJobDetailsPage(parsedMap, url)
      if pageSucceeded:
        self.aJobList.append(parsedMap)
+    
+  #
+  #  ----------------
+  #
+  def parseOtherMetaData(self, jobBlock, parsedMap):
+    aParent = jobBlock.parent
+    nameProp = aParent.find('span', itemprop='hiringOrganization')
+    namePropSpan = nameProp.find('span')
+    
+    parsedMap['company'] = namePropSpan.get_text()
+    namePropLink = namePropSpan.find('a') 
+    if not namePropLink is None:
+      parsedMap['company'] = namePropLink.get_text()
+      
+    locationProp = aParent.find('span',  itemprop='jobLocation')
+    parsedMap['jobLocation'] = locationProp.find(itemprop='addressLocality').get_text()
+    
+    tableProp = aParent.find('table')
+    parsedMap['salary'] = ''
+    salaryProperty = tableProp.find('nobr')
+    if not salaryProperty is None:
+      parsedMap['salary'] = salaryProperty.get_text()
 
   #
   #  ----------------
