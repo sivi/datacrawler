@@ -3,16 +3,17 @@ from toolbox import ToolBox
 import re # Regular expressions
 import logging
 
+#
+# Usage note:
+#
+#    value of daysBeforeNow='' or daysBeforeNow=0 means "Posted anytime"
+#
 
-class Indeed:
+class ZipRecruiter:
 
-  aLinkMap = {}   # map of city/url links: city --> url
-  aStateMap = {}  # map of state/state url:  state --> state url
-  aJobTypeMap = {} # map of job type/job url entry: type --> url entry
-  aJobExperienceLevelMap = {} # map of experience level / level url: level --> url entry
+  initiated = False
   aJobList = [] # resulting list of job maps
   delayBetweenRequests = 0 #delay between subsequent calls in miliseconds
-  totalcount = 0 # total count of available records (parsed from page)
   retrievedRecords = 0 # internal progress counter
   logger = logging.getLogger()
   
@@ -20,91 +21,47 @@ class Indeed:
   #  ----------------
   #
   def __init__(self, delayBetweenRequests = 1, loggingLevel = logging.WARNING):
-    if len(self.aLinkMap) != 0:
+    if self.initiated:
       return
     self.logger.setLevel(loggingLevel)
     self.delayBetweenRequests = delayBetweenRequests
-    toolBox = ToolBox()
-    soup_obj = toolBox.getParsedPage('https://www.indeed.com/q-business-l-chicago.il-jobs.html')
-    self.extractJobTypeAndExperienceLevelIndeedUrl(soup_obj)
-    
-  #
-  #  ----------------
-  #
-  def extractJobTypeAndExperienceLevelIndeedUrl(self, soup_obj):
-    jobTypeDiv = soup_obj.find('div', id='JOB_TYPE_rbo')  
-    self.insertStaticUrlIntoMap(jobTypeDiv, self.aJobTypeMap)
-    
-    experienceLevelDiv = soup_obj.find('div', id='EXP_LVL_rbo')
-    self.insertStaticUrlIntoMap(experienceLevelDiv, self.aJobExperienceLevelMap)
-
-  #
-  #  ----------------
-  #
-  def insertStaticUrlIntoMap(self, item, aMap):
-    allLinks = item.find_all('a')
-    for aLink in allLinks:
-      key = aLink.get_text()
-      if key.strip() == '':
-        continue
-      value = aLink.get('href').split('&')[2]
-      if key in aMap:
-        print ('In map already ' + key + ' ' + aMap[key] + ' ' + value)
-        continue
-      aMap[key] = value
+    self.initiated = True
 
   #
   #  ---------------- END of static data bootstrap  ----------------
   #
     
 
-  #https://www.indeed.com/jobs?q=business+$95,000&l=Chicago,+IL&jt=internship&explvl=mid_level
-  #https://www.indeed.com/jobs?q=business&l=chicago.il&fromage=0&start=410
+  # https://www.ziprecruiter.com/candidate/search?search=contractor&location=Chicago%2C+il&radius=5&days=1
 
   #
   #  ----------------
   #
-  def fetchJobList(self, city, radius=0, jobCategory='', daysBeforeToday=0, \
-                   jobTypeList=None, jobExperienceLevelList=None, countLimit=10):
+  def fetchJobList(self, city, radius=0, searchKeywords='', daysBeforeNow=1, \
+                   countLimit=10):
     
     self.totalcount = 0 # reset counter od available records
     retrievedRecords = 0
     nextBatchUrl = '' # url to retrieve next batch jobs page 
-    baseUrl = 'https://www.indeed.com'
-    aUrl = baseUrl + '/jobs?q=' + jobCategory + '&radius=' + str(radius) +\
-              '&l=' + city + '&fromage=' + str(daysBeforeToday) + '&sort=date'
+    baseUrl = 'https://www.ziprecruiter.com'
+    aUrl = baseUrl + '/candidate/search?search=' + searchKeywords + '&radius=' + str(radius) +\
+              '&location=' + city + '&days=' + str(daysBeforeNow)
               
     self.aJobList = [] # purge the list from previous results 
     
-    filters = ''
-    if not jobTypeList is None:
-      for aFilter in jobTypeList:
-        filters = filters + '&' + self.aJobTypeMap[aFilter]
-    if not jobExperienceLevelList is None:
-      for aFilter in jobExperienceLevelList:
-        filters = filters + '&' + self.aJobExperienceLevelMap[aFilter]
-    aUrl = aUrl + filters
     toolBox = ToolBox()
     try:
       while True:
         soup_obj = toolBox.getParsedPage(aUrl, self.delayBetweenRequests)
-        jobList = soup_obj.find_all(class_="result")
-        totalcount = soup_obj.find('div', id='searchCount')
-        if not totalcount is None:
-           self.totalcount = totalcount.get_text().split('of')[1]
-        self.parseJobList(jobList, baseUrl, city, jobCategory, countLimit)
+        jobList = soup_obj.find_all('article')
+        self.parseJobList(jobList, baseUrl, city, searchKeywords, countLimit)
 
         # check if next batch available
-        nextPageSpan = None
-        nextBatchDiv = soup_obj.find('div', class_='pagination')
-        if not nextBatchDiv is None: 
-          links = nextBatchDiv.find_all('a')
-          nextPageSpan = links[len(links)-1].find('span', class_='np')
+        nextPageAnchor = soup_obj.find('a', id='pagination-button-next')
         if self.retrievedRecords == countLimit or \
-           nextPageSpan is None:
+           nextPageAnchor is None:
           break
-        links = nextBatchDiv.find_all('a')  
-        aUrl = baseUrl + links[len(links)-1].get('href')
+        aUrl = baseUrl + nextPageAnchor.get('href')
       return True
     except Exception, e:
       self.logger.error(' fetchJobList FAILED ' + str(e)+ '  ' + aUrl)
@@ -116,11 +73,11 @@ class Indeed:
   #
   #  ----------------
   #
-  def parseJobList(self, jobList, baseUrl, city, jobCategory, countLimit=10):
+  def parseJobList(self, jobList, baseUrl, city, searchKeywords, countLimit):
     for jobItem in jobList:
       if self.retrievedRecords == countLimit:
         break
-      jobBlock = jobItem.find('h2', class_='jobtitle')
+      jobBlock = jobItem.find('h2', class_='job_title')
       # skip references to neighbouring areas which are different cities / servers
       if jobBlock is None:
         continue
@@ -128,21 +85,21 @@ class Indeed:
       if jobLink is None:
         continue
       
-      self.parseJobUrl(baseUrl, jobLink, jobBlock, city, jobCategory)
+      self.parseJobUrl(baseUrl, jobLink, jobBlock, city, searchKeywords)
       self.retrievedRecords +=1
 
   #
   #  ----------------
   #
-  def parseJobUrl(self, baseUrl, jobLink, jobBlock, city, jobCategory):
+  def parseJobUrl(self, baseUrl, jobLink, jobBlock, city, searchKeywords):
      url = jobLink.get('href')
-     jobTitle = jobLink.get('title')
+     jobTitle = jobLink.find(itemprop="title").get_text()
      
      parsedMap = {}
      parsedMap['url'] = baseUrl + url
      parsedMap['jobTitle'] = jobTitle
      parsedMap['city'] = city
-     parsedMap['jobCategory'] = jobCategory
+     parsedMap['searchKeywords'] = searchKeywords
      self.parseOtherMetaData(jobBlock, parsedMap)
      pageSucceeded = self.parseJobDetailsPage(parsedMap, url)
      if pageSucceeded:
@@ -163,29 +120,35 @@ class Indeed:
       
     locationProp = aParent.find('span',  itemprop='jobLocation')
     parsedMap['jobLocation'] = locationProp.find(itemprop='addressLocality').get_text()
-    
-    tableProp = aParent.find('table')
-    parsedMap['salary'] = ''
-    salaryProperty = tableProp.find('nobr')
-    if not salaryProperty is None:
-      parsedMap['salary'] = salaryProperty.get_text()
+
+    perksList = aParent.find_all('section', class_="perks_item")
+    for perkItam in perksList:
+      keySource = perkItam.find('h3')
+      key = keySource.get_text()
+      if not keySource.get('title') is None:
+        key = keySource.get('title')
+      valueList = perkItam.find('p', class_="data").strings
+      value = ''
+      for valueItem in valueList:
+        value += valueItem + '\n'
+      parsedMap[key] = value
 
   #
   #  ----------------
   #
   def parseJobDetailsPage(self, parsedMap, parsedUrl):
-    if parsedUrl.startswith('/rc/clk?'):
-      return True
       
+    parsedMap['jobPostingBody'] = ''
+    return True
     url = parsedMap['url']
     toolBox = ToolBox()
     try:
       soup_obj = toolBox.getParsedPage(url, self.delayBetweenRequests)
     except:
-      return False
+      return True
 
     jobText = ''
-    jobSummary = soup_obj.find('span', id='job_summary')
+    jobSummary = soup_obj.find('div', class_='jobDescriptionSection')
     for paragraph in jobSummary.strings:
       jobText += paragraph + '\n'
     parsedMap['jobPostingBody'] = jobText
@@ -240,6 +203,6 @@ class Indeed:
   #  ----------------
   #
 #
-#  ------------------------  END of CraigList class  ---------------
+#  ------------------------  END of ZipRecruiter class  ---------------
 #
 

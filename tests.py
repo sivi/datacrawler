@@ -1,5 +1,6 @@
 from craiglist import CraigList
 from indeed import Indeed
+from ziprecruiter import ZipRecruiter
 import logging
 
 #craiglist(country='US', state='CA', city='San Francisco', filters=None)
@@ -21,11 +22,25 @@ import logging
 #
 # ---------------  Indeed.com
 #
-test = Indeed(delayBetweenRequests=2, loggingLevel=logging.INFO)
+#test = Indeed(delayBetweenRequests=2, loggingLevel=logging.INFO)
 #test.dumpJobTypeMap()  
 #test.dumpJobExperienceLevelMap()
-test.fetchJobList('Chicago,IL', radius=0, jobCategory='', daysBeforeToday=1, \
-  jobTypeList=['Commission'], jobExperienceLevelList=None, countLimit=11)
+#test.fetchJobList('Chicago,IL', radius=0, jobCategory='', daysBeforeToday=1, \
+#  jobTypeList=['Commission'], jobExperienceLevelList=None, countLimit=11)
+#test.dumpJobList()
+
+#
+# ---------------  ZipRecruiter.com
+#
+test = ZipRecruiter(delayBetweenRequests=2, loggingLevel=logging.INFO)
+#
+# Usage note:
+#
+#    value of daysBeforeNow='' or daysBeforeNow=0 means "Posted anytime"
+#
+test.fetchJobList('Chicago,IL', radius=5, searchKeywords='', \
+                  daysBeforeNow=1, countLimit=2)
 test.dumpJobList()
+
 
 
