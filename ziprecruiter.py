@@ -40,6 +40,9 @@ class ZipRecruiter:
   def fetchJobList(self, city, radius=0, searchKeywords='', daysBeforeNow=1, \
                    countLimit=10):
     
+    city = ToolBox.prepareURLParameter(city)
+    searchKeywords = ToolBox.prepareURLParameter(searchKeywords)
+    
     self.totalcount = 0 # reset counter od available records
     retrievedRecords = 0
     nextBatchUrl = '' # url to retrieve next batch jobs page 

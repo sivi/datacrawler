@@ -64,6 +64,12 @@ class JobIsJob:
   #
   def fetchJobList(self, city, searchKeywords='', jobTypeList=None, countLimit=10):
     
+    city = ToolBox.prepareURLParameter(city)
+    searchKeywords = ToolBox.prepareURLParameter(searchKeywords)
+    # NOTE: 
+    #       jobTypeList is matched 
+    #       against mapped values !!!
+    
     self.totalcount = 0 # reset counter od available records
     retrievedRecords = 0
     nextBatchUrl = '' # url to retrieve next batch jobs page 

@@ -46,3 +46,27 @@ class ToolBox:
   
       return soup_obj
   
+  #
+  #  ----------------
+  #
+  @staticmethod
+  def prepareURLParameter(parameterValue):
+    aValue = parameterValue.replace(' ', '+')
+    aValue = aValue.replace(',', '%2C')
+    return aValue
+     
+  #
+  #  ----------------
+  #
+  @staticmethod
+  def prepareURLParameterList(aList):
+    if aList is None:
+      return
+    i = 0
+    while i < len(aList):
+      aValue = aList[i]
+      aValue = aValue.replace(' ', '+')
+      aValue = aValue.replace(',', '%2C')
+      aList[i] = aValue
+      i += 1
+    return

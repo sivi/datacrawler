@@ -67,6 +67,12 @@ class Indeed:
   def fetchJobList(self, city, radius=0, jobCategory='', daysBeforeToday=0, \
                    jobTypeList=None, jobExperienceLevelList=None, countLimit=10):
     
+    city = ToolBox.prepareURLParameter(city)
+    jobCategory = ToolBox.prepareURLParameter(jobCategory)
+    # NOTE: 
+    #       jobTypeList, jobExperienceLevelList are matched 
+    #       against mapped values !!!
+    
     self.totalcount = 0 # reset counter od available records
     retrievedRecords = 0
     nextBatchUrl = '' # url to retrieve next batch jobs page 

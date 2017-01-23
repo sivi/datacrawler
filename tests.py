@@ -26,7 +26,13 @@ import logging
 #test = Indeed(delayBetweenRequests=2, loggingLevel=logging.INFO)
 #test.dumpJobTypeMap()  
 #test.dumpJobExperienceLevelMap()
+    # NOTE: 
+    #       jobTypeList, jobExperienceLevelList are matched 
+    #       against mapped values !!!
+
 #test.fetchJobList('Chicago,IL', radius=0, jobCategory='', daysBeforeToday=1, \
+#  jobTypeList=['Commission'], jobExperienceLevelList=None, countLimit=11)
+#test.fetchJobList('Chicago, IL', radius=0, jobCategory='software engineer', daysBeforeToday=1, \
 #  jobTypeList=['Commission'], jobExperienceLevelList=None, countLimit=11)
 #test.dumpJobList()
 
@@ -41,19 +47,27 @@ import logging
 #
 #test.fetchJobList('Chicago,IL', radius=5, searchKeywords='', \
 #                  daysBeforeNow=1, countLimit=2)
+#test.fetchJobList('Chicago, IL', radius=5, searchKeywords='software engineer', \
+#                  daysBeforeNow=1, countLimit=2)
 #test.dumpJobList()
 
 #
 # ---------------  JobIsJob.com
 #
-test = JobIsJob(delayBetweenRequests=2, loggingLevel=logging.INFO)
+#test = JobIsJob(delayBetweenRequests=2, loggingLevel=logging.INFO)
 #
 #
 #test.dumpJobTypeMap()
 
-test.fetchJobList('Chicago,IL', searchKeywords='', \
-                  jobTypeList=['Full Time'], countLimit=20)
-test.dumpJobList()
+    # NOTE: 
+    #       jobTypeList,is matched 
+    #       against mapped values !!!
+    
+#test.fetchJobList('Chicago, IL', searchKeywords='', \
+#                  jobTypeList=['Full Time'], countLimit=20)
+#test.fetchJobList('Chicago, IL', searchKeywords='software engineer', \
+#                  countLimit=20)
+#test.dumpJobList()
 
 
 
